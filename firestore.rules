@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Shared business profile and invoice counter.
+    match /meta/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Invoice records. Anyone signed in can create and read; once created,
+    // an invoice cannot be edited or deleted, so the numbering and history
+    // stay reliable even with several people using the tool at once.
+    match /invoices/{invoiceId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}
