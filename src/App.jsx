@@ -202,7 +202,7 @@ function InvoiceApp({ user }) {
     <div className="min-h-screen bg-paper p-6 font-sans text-ink">
       <div className="flex min-h-[640px] max-w-6xl mx-auto bg-paper rounded-xl overflow-hidden border border-line">
         {/* Sidebar */}
-        <div className="w-56 shrink-0 bg-ink text-paper flex flex-col py-2">
+        <div className="w-56 shrink-0 bg-navy text-paper flex flex-col py-2">
           <div className="px-5 pb-4 border-b border-white/10 mb-2 flex items-center gap-2.5">
             <img
               src={LOGO_DATA_URI}
@@ -211,7 +211,7 @@ function InvoiceApp({ user }) {
             />
             <div>
               <div className="text-sm font-bold leading-tight">Big Eight</div>
-              <div className="font-mono text-[9.5px] text-[#00C4D4] tracking-wide uppercase">
+              <div className="font-mono text-[9.5px] text-teal tracking-wide uppercase">
                 Invoice Studio
               </div>
             </div>
@@ -338,7 +338,7 @@ function NavButton({ active, onClick, icon, label }) {
       onClick={onClick}
       className={`flex items-center gap-2.5 px-5 py-3 text-sm border-l-[3px] transition-colors ${
         active
-          ? "bg-teal/20 text-white border-[#00C4D4] font-semibold"
+          ? "bg-teal/20 text-white border-[#2FA84F] font-semibold"
           : "text-white/70 border-transparent hover:bg-white/5 hover:text-white"
       }`}
     >

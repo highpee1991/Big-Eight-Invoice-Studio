@@ -13,9 +13,9 @@ export default {
       colors: {
         ink: "#16232E",
         navy: "#1F3A50",
-        navylight: "#274A66",
-        teal: "#008693",
-        tealdeep: "#00636D",
+        navylight: "#4C86EE",
+        teal: "#2FA84F",
+        tealdeep: "#1F7A38",
         slate: "#5A6B75",
         paper: "#F2F4F5",
         line: "#DDE3E7",

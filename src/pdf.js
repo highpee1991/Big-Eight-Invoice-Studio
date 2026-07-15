@@ -2,10 +2,22 @@ import { jsPDF } from "jspdf";
 import { money } from "./utils.js";
 import { LOGO_DATA_URI } from "./logoAsset.js";
 
-const NAVY = [31, 58, 80];
-const TEAL = [0, 134, 147];
+const NAVY = [47, 111, 228];
+const TEAL = [47, 168, 79];
 const SLATE = [90, 107, 117];
 const LIGHT = [220, 220, 220];
+
+function clean(str) {
+  if (str === null || str === undefined) return str;
+  return String(str)
+    .replace(/[\u2018\u2019\u02BC]/g, "'") // curly single quotes -> '
+    .replace(/[\u201C\u201D]/g, '"') // curly double quotes -> "
+    .replace(/\u2032/g, "'") // prime (feet) -> '
+    .replace(/\u2033/g, '"') // double prime (inches) -> "
+    .replace(/[\u2013\u2014]/g, "-") // en/em dash -> hyphen
+    .replace(/\u2026/g, "...") // ellipsis
+    .replace(/\u00A0/g, " "); // non-breaking space -> space
+}
 
 export function buildPdf(inv) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -22,11 +34,11 @@ export function buildPdf(inv) {
   doc.setFont("helvetica", "bold");doc.addImage;
   doc.setFontSize(15);
   doc.setTextColor(...NAVY);
-  doc.text(inv.business.name || "", marginX + 54, y);
+  doc.text(clean(inv.business.name) || "", marginX + 54, y);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   doc.setTextColor(...TEAL);
-  doc.text(inv.business.tagline || "", marginX + 54, y + 13);
+  doc.text(clean(inv.business.tagline) || "", marginX + 54, y + 13);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -34,7 +46,8 @@ export function buildPdf(inv) {
   const bizLines = [inv.business.address, inv.business.email, inv.business.phone, inv.business.website]
     .filter(Boolean)
     .join("\n")
-    .split("\n");
+    .split("\n")
+    .map(clean)
   let by = y + 32;
   bizLines.forEach((line) => {
     doc.text(line, marginX, by);
@@ -54,7 +67,7 @@ export function buildPdf(inv) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
-    doc.text(inv.invoiceName, pageWidth - marginX, y + 30, { align: "right" });
+    doc.text(clean(inv.invoiceName), pageWidth - marginX, y + 30, { align: "right" });
   }
 
   let cursorY = Math.max(by, y + 46) + 18;
@@ -65,7 +78,7 @@ export function buildPdf(inv) {
   // Metadata table: Invoice date | Due date | PO/Ref | Prepared by
   const metaColW = (pageWidth - marginX * 2) / 4;
   const metaLabels = ["INVOICE DATE", "DUE DATE", "PO / REFERENCE", "PREPARED BY"];
-  const metaValues = [inv.invoiceDate || "-", inv.dueDate || "-", inv.poNumber || "-", inv.business.repName || "-"];
+  const metaValues = [inv.invoiceDate || "-", inv.dueDate || "-", clean(inv.poNumber) || "-", clean(inv.business.repName) || "-"];
   doc.setFillColor(247, 249, 250);
   doc.rect(marginX, cursorY, pageWidth - marginX * 2, 34, "F");
   doc.setDrawColor(...LIGHT);
@@ -99,12 +112,12 @@ export function buildPdf(inv) {
     inv.clientName,
     ...inv.clientAddress.split("\n"),
     inv.clientEmail || "",
-  ].filter(Boolean);
+  ].filter(Boolean).map(clean);
   const shipAddr =
     inv.shipToAddress && inv.shipToAddress.trim()
       ? inv.shipToAddress
       : inv.clientAddress;
-  const shipLines = [inv.clientName, ...shipAddr.split("\n")].filter(Boolean);
+  const shipLines = [inv.clientName, ...shipAddr.split("\n")].filter(Boolean).map(clean);
   const colWidth = halfW - 12;
   const billWrapped = billLines.flatMap((line) =>
     doc.splitTextToSize(line, colWidth),
@@ -153,7 +166,7 @@ export function buildPdf(inv) {
   doc.setFontSize(9.5);
   const descCol = colPositions.find((c) => c.key === "desc");
   inv.items.forEach((it, idx) => {
-    const descLines = doc.splitTextToSize(it.desc || "", descCol.w - 10);
+    const descLines = doc.splitTextToSize(clean(it.desc) || "", descCol.w - 10);
     const rowH = Math.max(18, descLines.length * 12 + 6);
 
     if (idx % 2 === 1) {
@@ -162,8 +175,8 @@ export function buildPdf(inv) {
     }
     doc.setTextColor(20, 20, 20);
     const values = {
-      partNumber: it.partNumber || "—",
-      model: it.model || "—",
+      partNumber: clean(it.partNumber) || "—",
+      model: clean(it.model) || "—",
       qty: String(it.qty),
       price: money(it.price),
       amount: money(it.amount),
@@ -218,17 +231,17 @@ export function buildPdf(inv) {
     doc.setFontSize(10);
     doc.setTextColor(20, 20, 20);
     const payLines = [
-      inv.business.bank ? "Bank: " + inv.business.bank : "",
-      inv.business.account ? "Account: " + inv.business.account : "",
-      inv.business.routingNumber ? "Routing: " + inv.business.routingNumber : "",
-      inv.business.swift ? "SWIFT/BIC: " + inv.business.swift : "",
+      inv.business.bank ? "Bank: " + clean(inv.business.bank) : "",
+      inv.business.account ? "Account: " + clean(inv.business.account) : "",
+      inv.business.routingNumber ? "Routing: " + clean(inv.business.routingNumber) : "",
+      inv.business.swift ? "SWIFT/BIC: " + clean(inv.business.swift) : "",
     ].filter(Boolean);
     payLines.forEach((line) => {
       doc.text(line, marginX, cursorY);
       cursorY += 13;
     });
     if (inv.business.remitToAddress) {
-      doc.text("Remit to: " + inv.business.remitToAddress.replace(/\n/g, ", "), marginX, cursorY, { maxWidth: pageWidth - marginX * 2 });
+      doc.text("Remit to: " + clean(inv.business.remitToAddress).replace(/\n/g, ", "), marginX, cursorY, { maxWidth: pageWidth - marginX * 2 });
       cursorY += 13;
     }
     cursorY += 6;
@@ -236,7 +249,7 @@ export function buildPdf(inv) {
   if (inv.notes) {
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
-    doc.text(doc.splitTextToSize(inv.notes, pageWidth - marginX * 2), marginX, cursorY);
+    doc.text(doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2), marginX, cursorY);
     cursorY += 24;
   }
 
@@ -251,7 +264,7 @@ export function buildPdf(inv) {
   if (inv.business.repName) {
     doc.setFontSize(9.5);
     doc.setTextColor(60, 60, 60);
-    doc.text(inv.business.repName + (inv.business.repTitle ? ", " + inv.business.repTitle : ""), marginX, cursorY);
+    doc.text(clean(inv.business.repName) + (inv.business.repTitle ? ", " + clean(inv.business.repTitle) : ""), marginX, cursorY);
   }
 
   return doc;

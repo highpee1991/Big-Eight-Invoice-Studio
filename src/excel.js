@@ -2,8 +2,8 @@ import ExcelJS from "exceljs";
 import { LOGO_BASE64 } from "./logoAsset.js";
 import { invoiceFilename } from "./utils.js";
 
-const NAVY = "FF1F3A50";
-const TEAL = "FF008693";
+const NAVY = "FF2F6FE4";
+const TEAL = "FF2FA84F";
 const SLATE = "FF5A6B75";
 const LIGHT_FILL = "FFF7F9FA";
 const WHITE = "FFFFFFFF";
