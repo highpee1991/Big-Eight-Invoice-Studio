@@ -10,9 +10,11 @@ export const DEFAULT_BUSINESS = {
   bankAddress: "",
   account: "",
   routingNumber: "",
+  wireRoutingNumber: "",
   swift: "",
   zelle: "",
-  cardFeeNote: "For credit card payments, there is a 4% processing fee that would be added.",
+  cardFeeNote:
+    "For credit card payments, there is a 4% processing fee that would be added.",
   refundPolicy: "",
   remitToAddress: "",
   repName: "James Stephenson",

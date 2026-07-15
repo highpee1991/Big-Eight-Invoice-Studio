@@ -285,11 +285,14 @@ export function buildPdf(inv) {
     doc.setFontSize(10);
     doc.setTextColor(20, 20, 20);
     const payLines = [
-      inv.business.zelle ? "Zelle: " + clean(inv.business.zelle) : "",
+      inv.business.zelle ? "Contact: " + clean(inv.business.zelle) : "",
       inv.business.bank ? "Bank: " + clean(inv.business.bank) : "",
       inv.business.account ? "Account: " + clean(inv.business.account) : "",
       inv.business.routingNumber
         ? "Routing: " + clean(inv.business.routingNumber)
+        : "",
+      inv.business.wireRoutingNumber
+        ? "Wire Routing: " + clean(inv.business.wireRoutingNumber)
         : "",
       inv.business.swift ? "SWIFT/BIC: " + clean(inv.business.swift) : "",
       inv.business.bankAddress

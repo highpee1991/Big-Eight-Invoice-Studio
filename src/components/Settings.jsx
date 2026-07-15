@@ -97,7 +97,7 @@ export default function Settings({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3.5">
-          <Field label="Routing number (ABA)">
+          <Field label="ACH / Direct Deposit routing number">
             <input
               className={inputCls}
               value={business.routingNumber}
@@ -105,6 +105,16 @@ export default function Settings({
               placeholder="For domestic wire/ACH"
             />
           </Field>
+          <Field label="Wire transfer routing number">
+            <input
+              className={inputCls}
+              value={business.wireRoutingNumber}
+              onChange={(e) => upd("wireRoutingNumber", e.target.value)}
+              placeholder="Only if different from ACH routing number"
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3.5">
           <Field label="SWIFT / BIC">
             <input
               className={inputCls}
@@ -123,12 +133,12 @@ export default function Settings({
               placeholder="6228 Westline Dr, Houston TX 77036"
             />
           </Field>
-          <Field label="Zelle">
+          <Field label="Contact email">
             <input
               className={inputCls}
               value={business.zelle}
               onChange={(e) => upd("zelle", e.target.value)}
-              placeholder="email or phone used for Zelle"
+              placeholder="email or phone used for Bank"
             />
           </Field>
         </div>

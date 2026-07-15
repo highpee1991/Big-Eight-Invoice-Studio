@@ -72,7 +72,7 @@ export async function buildWorkbook(inv) {
   setCell(sheet, `D${billRow}`, "SHIP TO", { bold: true, size: 8.5, color: SLATE });
   const billLines = [
     inv.clientName || "",
-    inv.clientCompanyName || "",
+    inv.companyName || "",
     ...inv.clientAddress.split("\n"),
     inv.clientEmail || "",
     inv.clientPhone || "",
@@ -128,9 +128,16 @@ export async function buildWorkbook(inv) {
     const payLines = [
       inv.business.bank ? "Bank: " + inv.business.bank : "",
       inv.business.account ? "Account: " + inv.business.account : "",
-      inv.business.routingNumber ? "Routing: " + inv.business.routingNumber : "",
+      inv.business.routingNumber
+        ? "ACH/Direct Deposit Routing: " + inv.business.routingNumber
+        : "",
+      inv.business.wireRoutingNumber
+        ? "Wire Routing: " + inv.business.wireRoutingNumber
+        : "",
       inv.business.swift ? "SWIFT/BIC: " + inv.business.swift : "",
-      inv.business.remitToAddress ? "Remit to: " + inv.business.remitToAddress.replace(/\n/g, ", ") : "",
+      inv.business.remitToAddress
+        ? "Remit to: " + inv.business.remitToAddress.replace(/\n/g, ", ")
+        : "",
     ].filter(Boolean);
     sheet.mergeCells(`A${row}:F${row + payLines.length - 1}`);
     setCell(sheet, `A${row}`, payLines.join("\n"), { size: 9.5, wrap: true });
