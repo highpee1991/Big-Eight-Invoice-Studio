@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { money } from "../utils.js";
 
-export default function History({ historyIndex, loading, onDownload }) {
+export default function History({ historyIndex, loading, onDownload, onDelete }) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -11,7 +11,7 @@ export default function History({ historyIndex, loading, onDownload }) {
     return historyIndex.filter((item) =>
       [item.number, item.invoiceName, item.clientName, item.createdBy]
         .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(q))
+        .some((field) => field.toLowerCase().includes(q)),
     );
   }, [historyIndex, search]);
 
@@ -23,7 +23,10 @@ export default function History({ historyIndex, loading, onDownload }) {
       </p>
 
       <div className="relative mb-4 max-w-sm">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate" />
+        <Search
+          size={15}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate"
+        />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -50,28 +53,78 @@ export default function History({ historyIndex, loading, onDownload }) {
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr>
-                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Number</th>
-                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Name</th>
-                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Client</th>
-                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Date</th>
-                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Created by</th>
-                <th className="text-right text-[11px] uppercase text-slate px-2 py-2 border-b border-line">Total</th>
+                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Number
+                </th>
+                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Name
+                </th>
+                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Client
+                </th>
+                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Date
+                </th>
+                <th className="text-left text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Created by
+                </th>
+                <th className="text-right text-[11px] uppercase text-slate px-2 py-2 border-b border-line">
+                  Total
+                </th>
                 <th className="border-b border-line"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((item) => (
                 <tr key={item.number}>
-                  <td className="px-2 py-2.5 border-b border-gray-100 font-mono text-tealdeep font-semibold">{item.number}</td>
-                  <td className="px-2 py-2.5 border-b border-gray-100">{item.invoiceName || <span className="text-gray-300">—</span>}</td>
-                  <td className="px-2 py-2.5 border-b border-gray-100">{item.clientName}</td>
-                  <td className="px-2 py-2.5 border-b border-gray-100">{item.invoiceDate || "—"}</td>
-                  <td className="px-2 py-2.5 border-b border-gray-100 text-[12.5px] text-slate">{item.createdBy || "—"}</td>
-                  <td className="px-2 py-2.5 border-b border-gray-100 text-right font-mono">{money(item.total)}</td>
+                  <td className="px-2 py-2.5 border-b border-gray-100 font-mono text-tealdeep font-semibold">
+                    {item.number}
+                  </td>
+                  <td className="px-2 py-2.5 border-b border-gray-100">
+                    {item.invoiceName || (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2.5 border-b border-gray-100">
+                    {item.clientName}
+                  </td>
+                  <td className="px-2 py-2.5 border-b border-gray-100">
+                    {item.invoiceDate || "—"}
+                  </td>
+                  <td className="px-2 py-2.5 border-b border-gray-100 text-[12.5px] text-slate">
+                    {item.createdBy || "—"}
+                  </td>
+                  <td className="px-2 py-2.5 border-b border-gray-100 text-right font-mono">
+                    {money(item.total)}
+                  </td>
                   <td className="px-2 py-2.5 border-b border-gray-100">
                     <div className="flex gap-1.5 justify-end">
-                      <button onClick={() => onDownload(item, "pdf")} className="text-[11.5px] px-2 py-1 border border-line rounded hover:border-teal hover:text-teal">PDF</button>
-                      <button onClick={() => onDownload(item, "xlsx")} className="text-[11.5px] px-2 py-1 border border-line rounded hover:border-teal hover:text-teal">Excel</button>
+                      <button
+                        onClick={() => onDownload(item, "pdf")}
+                        className="text-[11.5px] px-2 py-1 border border-line rounded hover:border-teal hover:text-teal"
+                      >
+                        PDF
+                      </button>
+                      <button
+                        onClick={() => onDownload(item, "xlsx")}
+                        className="text-[11.5px] px-2 py-1 border border-line rounded hover:border-teal hover:text-teal"
+                      >
+                        Excel
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Delete invoice ${item.number}? This can't be undone.`,
+                            )
+                          ) {
+                            onDelete(item);
+                          }
+                        }}
+                        className="text-[11.5px] px-2 py-1 border border-line rounded hover:border-red-400 hover:text-red-500"
+                      >
+                        X
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -21,6 +21,7 @@ import {
   setNextNumber,
   saveInvoiceRecord,
   listInvoices,
+  deleteInvoiceRecord,
 } from "./data.js";
 
 let idCounter = 0;
@@ -184,6 +185,12 @@ function InvoiceApp({ user }) {
     else await downloadXlsx(record);
   }
 
+  async function handleDeleteInvoiceRecord(record) {
+    await deleteInvoiceRecord(record.number)
+    await refreshHistory()
+    showToast(`Invoice ${record.number} deleted`);
+  }
+
   async function saveSettings() {
     await saveBusinessProfile(business);
     if (startOverride) {
@@ -307,6 +314,7 @@ function InvoiceApp({ user }) {
               historyIndex={historyIndex}
               loading={historyLoading}
               onDownload={handleHistoryDownload}
+              onDelete={handleDeleteInvoiceRecord}
             />
           )}
           {view === "settings" && (

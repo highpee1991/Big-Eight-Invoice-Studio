@@ -8,13 +8,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Invoice records. Anyone signed in can create and read; once created,
-    // an invoice cannot be edited or deleted, so the numbering and history
-    // stay reliable even with several people using the tool at once.
+    // Invoice records. Anyone signed in can create, read, update, or delete.
     match /invoices/{invoiceId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if false;
+      allow read, create, update, delete: if request.auth != null;
     }
   }
 }

@@ -9,6 +9,7 @@ import {
   getDocs,
   runTransaction,
   serverTimestamp,
+  deleteDoc
 } from "firebase/firestore";
 import { db } from "./firebase.js";
 
@@ -77,4 +78,10 @@ export async function listInvoices() {
   const q = query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(300));
   const snap = await getDocs(q);
   return snap.docs.map((d) => d.data());
+}
+
+
+// delete document
+export async function deleteInvoiceRecord(number) {
+  await deleteDoc(doc(db, "invoices", number))  
 }
