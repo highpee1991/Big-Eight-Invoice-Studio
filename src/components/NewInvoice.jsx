@@ -17,6 +17,8 @@ export default function NewInvoice(props) {
     setClientAddress,
     clientEmail,
     setClientEmail,
+    clientPhone,
+    setClientPhone,
     shipToSame,
     setShipToSame,
     shipToAddress,
@@ -27,6 +29,8 @@ export default function NewInvoice(props) {
     setInvoiceDate,
     dueDate,
     setDueDate,
+    terms,
+    setTerms,
     notes,
     setNotes,
     taxRate,
@@ -79,7 +83,7 @@ export default function NewInvoice(props) {
             <input
               className={inputCls}
               value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
+              onChange={(e) => setClientName(e.target.value)} // this should be optional come back to this
               placeholder="Jeff Stark"
             />
           </Field>
@@ -97,6 +101,14 @@ export default function NewInvoice(props) {
               value={clientEmail}
               onChange={(e) => setClientEmail(e.target.value)}
               placeholder="billing@client.com"
+            />
+          </Field>
+          <Field label="Client phone (optional)">
+            <input
+              className={inputCls}
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              placeholder="+1 713 555 0100"
             />
           </Field>
         </div>
@@ -129,7 +141,7 @@ export default function NewInvoice(props) {
           </Field>
         )}
 
-        <div className="grid grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-4 gap-3.5">
           <Field label="Invoice date">
             <input
               type="date"
@@ -144,6 +156,14 @@ export default function NewInvoice(props) {
               className={inputCls}
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+            />
+          </Field>
+          <Field label="Terms">
+            <input
+              className={inputCls}
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+              placeholder="Net 30"
             />
           </Field>
           <Field label="PO / Reference (optional)">

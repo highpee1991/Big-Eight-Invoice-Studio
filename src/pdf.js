@@ -31,7 +31,8 @@ export function buildPdf(inv) {
     /* logo is optional, ignore if it fails to embed */
   }
 
-  doc.setFont("helvetica", "bold");doc.addImage;
+  doc.setFont("helvetica", "bold");
+  doc.addImage;
   doc.setFontSize(15);
   doc.setTextColor(...NAVY);
   doc.text(clean(inv.business.name) || "", marginX + 54, y);
@@ -43,59 +44,93 @@ export function buildPdf(inv) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...SLATE);
-  const bizLines = [inv.business.address, inv.business.email, inv.business.phone, inv.business.website]
+  const bizLines = [
+    inv.business.address,
+    inv.business.email,
+    inv.business.phone,
+    inv.business.website,
+  ]
     .filter(Boolean)
     .join("\n")
     .split("\n")
-    .map(clean)
+    .map(clean);
   let by = y + 32;
   bizLines.forEach((line) => {
     doc.text(line, marginX, by);
     by += 12;
   });
 
-  // INVOICE title + number, top right
+  // INVOICE title + number, top right — solid navy bar, bold white text
+  const invoiceLabel = "INVOICE: " + inv.number;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...NAVY);
-  doc.text("INVOICE", pageWidth - marginX, y, { align: "right" });
-  doc.setFont("courier", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...TEAL);
-  doc.text(inv.number, pageWidth - marginX, y + 16, { align: "right" });
+  doc.setFontSize(13);
+  const invoiceLabelW = doc.getTextWidth(invoiceLabel) + 20;
+  doc.setFillColor(...NAVY);
+  doc.rect(pageWidth - marginX - invoiceLabelW, y - 16, invoiceLabelW, 24, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.text(invoiceLabel, pageWidth - marginX - 10, y, { align: "right" });
   if (inv.invoiceName) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
-    doc.text(clean(inv.invoiceName), pageWidth - marginX, y + 30, { align: "right" });
+    doc.text(clean(inv.invoiceName), pageWidth - marginX, y + 20, {
+      align: "right",
+    });
   }
 
-  let cursorY = Math.max(by, y + 46) + 18;
+  let cursorY = Math.max(by, y + 36) + 18;
   doc.setDrawColor(...LIGHT);
   doc.line(marginX, cursorY, pageWidth - marginX, cursorY);
   cursorY += 20;
 
-  // Metadata table: Invoice date | Due date | PO/Ref | Prepared by
-  const metaColW = (pageWidth - marginX * 2) / 4;
-  const metaLabels = ["INVOICE DATE", "DUE DATE", "PO / REFERENCE", "PREPARED BY"];
-  const metaValues = [inv.invoiceDate || "-", inv.dueDate || "-", clean(inv.poNumber) || "-", clean(inv.business.repName) || "-"];
-  doc.setFillColor(247, 249, 250);
-  doc.rect(marginX, cursorY, pageWidth - marginX * 2, 34, "F");
-  doc.setDrawColor(...LIGHT);
-  doc.rect(marginX, cursorY, pageWidth - marginX * 2, 34, "S");
+  // Metadata bar: Date | Terms | Due date | PO/Ref | Prepared by — solid navy, bold white text
+  // Metadata bar: Date | Terms | Due date | PO/Ref | Prepared by — solid navy, bold white text
+  const metaColW = (pageWidth - marginX * 2) / 5;
+  const metaLabels = [
+    "DATE",
+    "TERMS",
+    "DUE DATE",
+    "PO / REFERENCE",
+    "PREPARED BY",
+  ];
+  const metaValues = [
+    inv.invoiceDate || "-",
+    clean(inv.terms) || "-",
+    inv.dueDate || "-",
+    clean(inv.poNumber) || "-",
+    clean(inv.business.repName) || "-",
+  ];
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  const metaWrapped = metaValues.map((v) =>
+    doc.splitTextToSize(String(v), metaColW - 12),
+  );
+  const metaMaxLines = Math.max(1, ...metaWrapped.map((lines) => lines.length));
+  const metaBarH = 20 + metaMaxLines * 11;
+
+  doc.setFillColor(...NAVY);
+  doc.rect(marginX, cursorY, pageWidth - marginX * 2, metaBarH, "F");
   metaLabels.forEach((label, i) => {
     const x = marginX + i * metaColW;
-    if (i > 0) doc.line(x, cursorY, x, cursorY + 34);
+    if (i > 0) {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(x, cursorY + 6, x, cursorY + metaBarH - 6);
+    }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
-    doc.setTextColor(...SLATE);
+    doc.setTextColor(255, 255, 255);
     doc.text(label, x + 8, cursorY + 13);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(20, 20, 20);
-    doc.text(String(metaValues[i]), x + 8, cursorY + 26);
+    doc.setTextColor(255, 255, 255);
+    doc.text(metaWrapped[i], x + 8, cursorY + 26, {
+      maxWidth: metaColW - 12,
+    });
   });
-  cursorY += 54;
+  cursorY += metaBarH + 20;
+  doc.setLineWidth(1);
 
   // Bill To / Ship To
   const halfW = (pageWidth - marginX * 2) / 2;
@@ -109,15 +144,21 @@ export function buildPdf(inv) {
   doc.setFontSize(10.5);
   doc.setTextColor(20, 20, 20);
   const billLines = [
-    inv.clientName,
+    inv.clientName || "",
+    inv.companyName || "",
     ...inv.clientAddress.split("\n"),
     inv.clientEmail || "",
-  ].filter(Boolean).map(clean);
+    inv.clientPhone || "",
+  ]
+    .filter(Boolean)
+    .map(clean);
   const shipAddr =
     inv.shipToAddress && inv.shipToAddress.trim()
       ? inv.shipToAddress
       : inv.clientAddress;
-  const shipLines = [inv.clientName, ...shipAddr.split("\n")].filter(Boolean).map(clean);
+  const shipLines = [inv.clientName, ...shipAddr.split("\n")]
+    .filter(Boolean)
+    .map(clean);
   const colWidth = halfW - 12;
   const billWrapped = billLines.flatMap((line) =>
     doc.splitTextToSize(line, colWidth),
@@ -201,14 +242,22 @@ export function buildPdf(inv) {
   doc.setFontSize(10.5);
   doc.setTextColor(20, 20, 20);
   doc.text("Subtotal", pageWidth - marginX - 100, cursorY, { align: "right" });
-  doc.text(money(inv.subtotal), pageWidth - marginX, cursorY, { align: "right" });
+  doc.text(money(inv.subtotal), pageWidth - marginX, cursorY, {
+    align: "right",
+  });
   cursorY += 15;
-  doc.text("Tax (" + inv.taxRate + "%)", pageWidth - marginX - 100, cursorY, { align: "right" });
+  doc.text("Tax (" + inv.taxRate + "%)", pageWidth - marginX - 100, cursorY, {
+    align: "right",
+  });
   doc.text(money(inv.tax), pageWidth - marginX, cursorY, { align: "right" });
   cursorY += 15;
   if (inv.shippingHandling > 0) {
-    doc.text("Shipping / Handling", pageWidth - marginX - 100, cursorY, { align: "right" });
-    doc.text(money(inv.shippingHandling), pageWidth - marginX, cursorY, { align: "right" });
+    doc.text("Shipping / Handling", pageWidth - marginX - 100, cursorY, {
+      align: "right",
+    });
+    doc.text(money(inv.shippingHandling), pageWidth - marginX, cursorY, {
+      align: "right",
+    });
     cursorY += 15;
   }
   doc.setDrawColor(20, 20, 20);
@@ -221,7 +270,12 @@ export function buildPdf(inv) {
   doc.text(money(inv.total), pageWidth - marginX, cursorY, { align: "right" });
 
   cursorY += 32;
-  if (inv.business.bank || inv.business.account || inv.business.remitToAddress) {
+  if (
+    inv.business.bank ||
+    inv.business.account ||
+    inv.business.zelle ||
+    inv.business.remitToAddress
+  ) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
@@ -231,25 +285,70 @@ export function buildPdf(inv) {
     doc.setFontSize(10);
     doc.setTextColor(20, 20, 20);
     const payLines = [
+      inv.business.zelle ? "Zelle: " + clean(inv.business.zelle) : "",
       inv.business.bank ? "Bank: " + clean(inv.business.bank) : "",
       inv.business.account ? "Account: " + clean(inv.business.account) : "",
-      inv.business.routingNumber ? "Routing: " + clean(inv.business.routingNumber) : "",
+      inv.business.routingNumber
+        ? "Routing: " + clean(inv.business.routingNumber)
+        : "",
       inv.business.swift ? "SWIFT/BIC: " + clean(inv.business.swift) : "",
+      inv.business.bankAddress
+        ? "Bank address: " + clean(inv.business.bankAddress)
+        : "",
     ].filter(Boolean);
     payLines.forEach((line) => {
       doc.text(line, marginX, cursorY);
       cursorY += 13;
     });
     if (inv.business.remitToAddress) {
-      doc.text("Remit to: " + clean(inv.business.remitToAddress).replace(/\n/g, ", "), marginX, cursorY, { maxWidth: pageWidth - marginX * 2 });
+      doc.text(
+        "Remit to: " + clean(inv.business.remitToAddress).replace(/\n/g, ", "),
+        marginX,
+        cursorY,
+        { maxWidth: pageWidth - marginX * 2 },
+      );
       cursorY += 13;
+    }
+    if (inv.business.cardFeeNote) {
+      cursorY += 3;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...SLATE);
+      const feeLines = doc.splitTextToSize(
+        clean(inv.business.cardFeeNote),
+        pageWidth - marginX * 2,
+      );
+      doc.text(feeLines, marginX, cursorY);
+      cursorY += feeLines.length * 12;
+      doc.setFont("helvetica", "normal");
     }
     cursorY += 6;
   }
+  if (inv.business.refundPolicy) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...SLATE);
+    doc.text("RETURNS & CANCELLATION POLICY", marginX, cursorY);
+    cursorY += 12;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(90, 90, 90);
+    const policyLines = doc.splitTextToSize(
+      clean(inv.business.refundPolicy),
+      pageWidth - marginX * 2,
+    );
+    doc.text(policyLines, marginX, cursorY);
+    cursorY += policyLines.length * 11 + 10;
+  }
   if (inv.notes) {
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
-    doc.text(doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2), marginX, cursorY);
+    doc.text(
+      doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2),
+      marginX,
+      cursorY,
+    );
     cursorY += 24;
   }
 
@@ -264,7 +363,12 @@ export function buildPdf(inv) {
   if (inv.business.repName) {
     doc.setFontSize(9.5);
     doc.setTextColor(60, 60, 60);
-    doc.text(clean(inv.business.repName) + (inv.business.repTitle ? ", " + clean(inv.business.repTitle) : ""), marginX, cursorY);
+    doc.text(
+      clean(inv.business.repName) +
+        (inv.business.repTitle ? ", " + clean(inv.business.repTitle) : ""),
+      marginX,
+      cursorY,
+    );
   }
 
   return doc;

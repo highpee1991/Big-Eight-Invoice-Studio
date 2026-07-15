@@ -27,11 +27,8 @@ export default function InvoicePreview({ inv }) {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-2xl font-bold tracking-wide text-ink mb-1">
-              INVOICE
-            </div>
-            <div className="inline-block border border-teal text-tealdeep font-mono font-bold text-[12px] px-2.5 py-1 rounded rotate-1">
-              {inv.number}
+            <div className="bg-navy text-white font-bold text-[13px] tracking-wide px-3.5 py-2 rounded-sm inline-block">
+              INVOICE {inv.number}
             </div>
             {inv.invoiceName && (
               <div className="text-[12px] text-slate mt-2">
@@ -41,37 +38,42 @@ export default function InvoicePreview({ inv }) {
           </div>
         </div>
 
-        {/* Metadata table */}
-        <div className="grid grid-cols-4 border border-gray-200 rounded-sm overflow-hidden mb-6 text-[12px]">
-          <div className="bg-slate-50 px-3 py-2 border-r border-b border-gray-200">
-            <div className="text-[10px] uppercase text-slate tracking-wide">
-              Invoice date
+        <div className="grid grid-cols-5 gap-[1px] bg-navy rounded-sm overflow-hidden mb-6 text-[12px]">
+          <div className="bg-navy px-3 py-2">
+            <div className="text-[10px] uppercase text-white/70 tracking-wide">
+              Date
             </div>
-            <div className="font-mono font-semibold text-ink">
+            <div className="font-mono font-bold text-white">
               {inv.invoiceDate || "—"}
             </div>
           </div>
-          <div className="bg-slate-50 px-3 py-2 border-r border-b border-gray-200">
-            <div className="text-[10px] uppercase text-slate tracking-wide">
+          <div className="bg-navy px-3 py-2">
+            <div className="text-[10px] uppercase text-white/70 tracking-wide">
+              Terms
+            </div>
+            <div className="font-bold text-white">{inv.terms || "—"}</div>
+          </div>
+          <div className="bg-navy px-3 py-2">
+            <div className="text-[10px] uppercase text-white/70 tracking-wide">
               Due date
             </div>
-            <div className="font-mono font-semibold text-ink">
+            <div className="font-mono font-bold text-white">
               {inv.dueDate || "—"}
             </div>
           </div>
-          <div className="bg-slate-50 px-3 py-2 border-r border-b border-gray-200">
-            <div className="text-[10px] uppercase text-slate tracking-wide">
+          <div className="bg-navy px-3 py-2">
+            <div className="text-[10px] uppercase text-white/70 tracking-wide">
               PO / Reference
             </div>
-            <div className="font-mono font-semibold text-ink">
+            <div className="font-mono font-bold text-white">
               {inv.poNumber || "—"}
             </div>
           </div>
-          <div className="bg-slate-50 px-3 py-2 border-b border-gray-200">
-            <div className="text-[10px] uppercase text-slate tracking-wide">
+          <div className="bg-navy px-3 py-2">
+            <div className="text-[10px] uppercase text-white/70 tracking-wide">
               Prepared by
             </div>
-            <div className="font-semibold text-ink">
+            <div className="font-bold text-white">
               {inv.business.repName || "—"}
             </div>
           </div>
@@ -90,6 +92,7 @@ export default function InvoicePreview({ inv }) {
               {"\n"}
               {inv.clientAddress}
               {inv.clientEmail ? "\n" + inv.clientEmail : ""}
+              {inv.clientPhone ? "\n" + inv.clientPhone : ""}
             </div>
           </div>
           <div>
@@ -180,10 +183,11 @@ export default function InvoicePreview({ inv }) {
         </div>
 
         {/* Payment details */}
-        {(inv.business.bank || inv.business.account) && (
+        {(inv.business.bank || inv.business.account || inv.business.zelle) && (
           <div className="mt-6 text-[11.5px] text-slate border-t border-gray-200 pt-3">
             <span className="font-semibold text-ink">Payment details</span>
             <br />
+            {inv.business.zelle ? "Zelle: " + inv.business.zelle + "  " : ""}
             {inv.business.bank ? "Bank: " + inv.business.bank + "  " : ""}
             {inv.business.account
               ? "Account: " + inv.business.account + "  "
@@ -192,14 +196,34 @@ export default function InvoicePreview({ inv }) {
               ? "Routing: " + inv.business.routingNumber + "  "
               : ""}
             {inv.business.swift ? "SWIFT/BIC: " + inv.business.swift : ""}
+            {inv.business.bankAddress ? (
+              <>
+                <br />
+                Bank address: {inv.business.bankAddress}
+              </>
+            ) : null}
             {inv.business.remitToAddress ? (
               <>
                 <br />
                 Remit to: {inv.business.remitToAddress}
               </>
             ) : null}
+            {inv.business.cardFeeNote ? (
+              <>
+                <br />
+                {inv.business.cardFeeNote}
+              </>
+            ) : null}
           </div>
         )}
+
+        {/* Refund / cancellation policy */}
+        {inv.business.refundPolicy && (
+          <div className="mt-4 text-[10.5px] text-slate border-t border-gray-200 pt-3 whitespace-pre-line">
+            {inv.business.refundPolicy}
+          </div>
+        )}
+
 
         {/* Notes */}
         {inv.notes && (

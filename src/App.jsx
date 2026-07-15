@@ -50,15 +50,17 @@ function InvoiceApp({ user }) {
   const [nextNumber, setNextNumberState] = useState(START_NUMBER);
 
   const [invoiceName, setInvoiceName] = useState("");
-  const [clientName, setClientName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [clientAddress, setClientAddress] = useState("");
+  const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
   const [shipToSame, setShipToSame] = useState(true);
   const [shipToAddress, setShipToAddress] = useState("");
   const [poNumber, setPoNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(todayISO());
   const [dueDate, setDueDate] = useState(plusDays(todayISO(), 14));
+  const [terms, setTerms] = useState("Net 30");
   const [notes, setNotes] = useState(DEFAULT_NOTES);
   const [taxRate, setTaxRate] = useState(0);
   const [shippingHandling, setShippingHandling] = useState("");
@@ -147,15 +149,25 @@ function InvoiceApp({ user }) {
         clientName: clientName.trim(),
         companyName: companyName.trim(),
         clientAddress: clientAddress.trim(),
+        clientName: clientName.trim(),
         clientEmail: clientEmail.trim(),
+        clientPhone: clientPhone.trim(),
         shipToAddress: shipToSame ? "" : shipToAddress.trim(),
         poNumber: poNumber.trim(),
         invoiceDate,
         dueDate,
+        terms: terms.trim(),
         notes,
         taxRate: parseFloat(taxRate) || 0,
         shippingHandling: shippingAmount,
-        items: cleanItems.map((i) => ({ partNumber: i.partNumber, model: i.model, desc: i.desc, qty: i.qty, price: i.price, amount: i.amount })),
+        items: cleanItems.map((i) => ({
+          partNumber: i.partNumber,
+          model: i.model,
+          desc: i.desc,
+          qty: i.qty,
+          price: i.price,
+          amount: i.amount,
+        })),
         subtotal,
         tax: taxAmount,
         total,
@@ -269,14 +281,16 @@ function InvoiceApp({ user }) {
             <NewInvoice
               invoiceName={invoiceName}
               setInvoiceName={setInvoiceName}
-              clientName={clientName}
-              setClientName={setClientName}
               companyName={companyName}
               setCompanyName={setCompanyName}
               clientAddress={clientAddress}
               setClientAddress={setClientAddress}
+              clientName={clientName}
+              setClientName={setClientName}
               clientEmail={clientEmail}
               setClientEmail={setClientEmail}
+              clientPhone={clientPhone}
+              setClientPhone={setClientPhone}
               shipToSame={shipToSame}
               setShipToSame={setShipToSame}
               shipToAddress={shipToAddress}
@@ -287,6 +301,8 @@ function InvoiceApp({ user }) {
               setInvoiceDate={setInvoiceDate}
               dueDate={dueDate}
               setDueDate={setDueDate}
+              terms={terms}
+              setTerms={setTerms}
               notes={notes}
               setNotes={setNotes}
               taxRate={taxRate}

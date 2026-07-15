@@ -59,18 +59,24 @@ export async function buildWorkbook(inv) {
 
   // Metadata row
   const metaRow = 8;
-  const metaLabels = ["INVOICE DATE", "DUE DATE", "PO / REFERENCE", "", "PREPARED BY", ""];
-  const metaValues = [inv.invoiceDate || "-", inv.dueDate || "-", inv.poNumber || "-", "", inv.business.repName || "-", ""];
+  const metaLabels = ["DATE", "TERMS", "DUE DATE", "PO / REFERENCE", "PREPARED BY", ""];
+  const metaValues = [inv.invoiceDate || "-", inv.terms || "-", inv.dueDate || "-", inv.poNumber || "-", inv.business.repName || "-", ""];
   ["A", "B", "C", "D", "E", "F"].forEach((col, i) => {
-    setCell(sheet, `${col}${metaRow}`, metaLabels[i], { bold: true, size: 7.5, color: SLATE, fill: LIGHT_FILL, border: true });
-    setCell(sheet, `${col}${metaRow + 1}`, metaValues[i], { size: 10, fill: LIGHT_FILL, border: true });
+    setCell(sheet, `${col}${metaRow}`, metaLabels[i], { bold: true, size: 7.5, color: WHITE, fill: NAVY, border: true });
+    setCell(sheet, `${col}${metaRow + 1}`, metaValues[i], { bold: true, size: 10, color: WHITE, fill: NAVY, border: true });
   });
 
   // Bill to / Ship to
   const billRow = 11;
   setCell(sheet, `A${billRow}`, "BILL TO", { bold: true, size: 8.5, color: SLATE });
   setCell(sheet, `D${billRow}`, "SHIP TO", { bold: true, size: 8.5, color: SLATE });
-  const billLines = [inv.clientName, ...inv.clientAddress.split("\n"), inv.clientEmail || ""].filter(Boolean);
+  const billLines = [
+    inv.clientName || "",
+    inv.clientCompanyName || "",
+    ...inv.clientAddress.split("\n"),
+    inv.clientEmail || "",
+    inv.clientPhone || "",
+  ].filter(Boolean);
   const shipAddr = inv.shipToAddress && inv.shipToAddress.trim() ? inv.shipToAddress : inv.clientAddress;
   const shipLines = [inv.clientName, ...shipAddr.split("\n")].filter(Boolean);
   sheet.mergeCells(`A${billRow + 1}:C${billRow + 3}`);
