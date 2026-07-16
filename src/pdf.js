@@ -22,8 +22,27 @@ function clean(str) {
 export function buildPdf(inv) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const marginX = 46;
+  const topMargin = 50;
+  const bottomMargin = 50;
   let y = 50;
+
+  // --- Page-break helper -----------------------------------------------
+  // Checks whether `neededHeight` more points can be drawn starting at
+  // `currentY` before hitting the bottom margin. If not, starts a new
+  // page and returns the new (reset) Y position. This is what was
+  // missing before: cursorY could grow past pageHeight with nothing
+  // ever calling doc.addPage(), so anything below the fold was silently
+  // clipped in the rendered/printed PDF (while the on-screen HTML
+  // preview just kept scrolling, hiding the problem).
+  function ensureSpace(neededHeight, currentY) {
+    if (currentY + neededHeight > pageHeight - bottomMargin) {
+      doc.addPage();
+      return topMargin;
+    }
+    return currentY;
+  }
 
   try {
     doc.addImage(LOGO_DATA_URI, "PNG", marginX, y - 16, 40, 38);
@@ -83,7 +102,6 @@ export function buildPdf(inv) {
   doc.line(marginX, cursorY, pageWidth - marginX, cursorY);
   cursorY += 20;
 
-  // Metadata bar: Date | Terms | Due date | PO/Ref | Prepared by — solid navy, bold white text
   // Metadata bar: Date | Terms | Due date | PO/Ref | Prepared by — solid navy, bold white text
   const metaColW = (pageWidth - marginX * 2) / 5;
   const metaLabels = [
@@ -192,16 +210,23 @@ export function buildPdf(inv) {
     return pos;
   });
 
-  doc.setFillColor(...NAVY);
-  doc.rect(marginX, cursorY, tableW, 20, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
-  colPositions.forEach((c) => {
-    const tx = c.align === "right" ? c.x + c.w - 6 : c.x + 6;
-    doc.text(c.label, tx, cursorY + 13, { align: c.align });
-  });
-  cursorY += 20;
+  // Reusable table header drawer — needed so the header can be redrawn
+  // if the table itself spans onto a new page.
+  function drawTableHeader(yPos) {
+    doc.setFillColor(...NAVY);
+    doc.rect(marginX, yPos, tableW, 20, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    colPositions.forEach((c) => {
+      const tx = c.align === "right" ? c.x + c.w - 6 : c.x + 6;
+      doc.text(c.label, tx, yPos + 13, { align: c.align });
+    });
+    return yPos + 20;
+  }
+
+  cursorY = ensureSpace(20, cursorY);
+  cursorY = drawTableHeader(cursorY);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
@@ -209,6 +234,15 @@ export function buildPdf(inv) {
   inv.items.forEach((it, idx) => {
     const descLines = doc.splitTextToSize(clean(it.desc) || "", descCol.w - 10);
     const rowH = Math.max(18, descLines.length * 12 + 6);
+
+    // Guard: if this row won't fit, start a new page and redraw the
+    // table header there so the continuation is still readable.
+    const fitsY = ensureSpace(rowH, cursorY);
+    if (fitsY !== cursorY) {
+      cursorY = drawTableHeader(fitsY);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+    }
 
     if (idx % 2 === 1) {
       doc.setFillColor(247, 249, 250);
@@ -239,6 +273,7 @@ export function buildPdf(inv) {
   cursorY += 18;
 
   // Totals
+  cursorY = ensureSpace(65, cursorY);
   doc.setFontSize(10.5);
   doc.setTextColor(20, 20, 20);
   doc.text("Subtotal", pageWidth - marginX - 100, cursorY, { align: "right" });
@@ -252,6 +287,7 @@ export function buildPdf(inv) {
   doc.text(money(inv.tax), pageWidth - marginX, cursorY, { align: "right" });
   cursorY += 15;
   if (inv.shippingHandling > 0) {
+    cursorY = ensureSpace(15, cursorY);
     doc.text("Shipping / Handling", pageWidth - marginX - 100, cursorY, {
       align: "right",
     });
@@ -260,6 +296,7 @@ export function buildPdf(inv) {
     });
     cursorY += 15;
   }
+  cursorY = ensureSpace(30, cursorY);
   doc.setDrawColor(20, 20, 20);
   doc.line(pageWidth - marginX - 200, cursorY, pageWidth - marginX, cursorY);
   cursorY += 17;
@@ -276,6 +313,26 @@ export function buildPdf(inv) {
     inv.business.zelle ||
     inv.business.remitToAddress
   ) {
+    // Estimate the block height up front (label + each line + remit +
+    // optional fee note) so we don't split "PAYMENT DETAILS" from its
+    // own content across a page break.
+    const payLinesPreview = [
+      inv.business.zelle,
+      inv.business.bank,
+      inv.business.account,
+      inv.business.routingNumber,
+      inv.business.wireRoutingNumber,
+      inv.business.swift,
+      inv.business.bankAddress,
+    ].filter(Boolean).length;
+    const estH =
+      14 +
+      payLinesPreview * 13 +
+      (inv.business.remitToAddress ? 13 : 0) +
+      (inv.business.cardFeeNote ? 24 : 0) +
+      10;
+    cursorY = ensureSpace(estH, cursorY);
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...SLATE);
@@ -328,6 +385,18 @@ export function buildPdf(inv) {
     cursorY += 6;
   }
   if (inv.business.refundPolicy) {
+    // Compute wrapped lines first so ensureSpace can reserve the exact
+    // height this block needs, then reuse the same array when drawing
+    // (previously this could be computed once but the block could still
+    // run off the page with nothing to stop it).
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    const policyLines = doc.splitTextToSize(
+      clean(inv.business.refundPolicy),
+      pageWidth - marginX * 2,
+    );
+    cursorY = ensureSpace(12 + policyLines.length * 11 + 10, cursorY);
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(...SLATE);
@@ -336,27 +405,22 @@ export function buildPdf(inv) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(90, 90, 90);
-    const policyLines = doc.splitTextToSize(
-      clean(inv.business.refundPolicy),
-      pageWidth - marginX * 2,
-    );
     doc.text(policyLines, marginX, cursorY);
     cursorY += policyLines.length * 11 + 10;
   }
   if (inv.notes) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
+    const noteLines = doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2);
+    cursorY = ensureSpace(noteLines.length * 11 + 24, cursorY);
     doc.setTextColor(...SLATE);
-    doc.text(
-      doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2),
-      marginX,
-      cursorY,
-    );
+    doc.text(noteLines, marginX, cursorY);
     cursorY += 24;
   }
 
   // Signature line
   cursorY += 20;
+  cursorY = ensureSpace(40, cursorY);
   doc.setDrawColor(120, 120, 120);
   doc.line(marginX, cursorY, marginX + 220, cursorY);
   doc.setFontSize(9);
