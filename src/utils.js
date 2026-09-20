@@ -35,3 +35,11 @@ export function invoiceFilename(inv, extension) {
   const base = slug ? `${slug}-${inv.number}` : inv.number;
   return `${base}.${extension}`;
 }
+
+
+export function formatDateUS(isoDate) {
+  if (!isoDate) return "";
+  const [year, month, day] = isoDate.split("-");
+  if (!year || !month || !day) return isoDate; // fallback if format is unexpected
+  return `${month}/${day}/${year}`;
+}

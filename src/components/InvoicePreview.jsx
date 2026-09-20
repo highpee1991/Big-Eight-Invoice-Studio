@@ -1,5 +1,5 @@
 import React from "react";
-import { fmt, money } from "../utils.js";
+import { fmt, formatDateUS, money } from "../utils.js";
 import { LOGO_DATA_URI } from "../logoAsset.js";
 
 export default function InvoicePreview({ inv }) {
@@ -44,7 +44,7 @@ export default function InvoicePreview({ inv }) {
               Date
             </div>
             <div className="font-mono font-bold text-white">
-              {inv.invoiceDate || "—"}
+              {formatDateUS(inv.invoiceDate) || "—"}
             </div>
           </div>
           <div className="bg-navy px-3 py-2">
@@ -58,7 +58,7 @@ export default function InvoicePreview({ inv }) {
               Due date
             </div>
             <div className="font-mono font-bold text-white">
-              {inv.dueDate || "—"}
+              {formatDateUS(inv.dueDate) || "—"}
             </div>
           </div>
           <div className="bg-navy px-3 py-2">

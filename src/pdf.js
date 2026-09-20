@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { money } from "./utils.js";
+import { formatDateUS, money } from "./utils.js";
 import { LOGO_DATA_URI } from "./logoAsset.js";
 
 const NAVY = [47, 111, 228];
@@ -10,13 +10,13 @@ const LIGHT = [220, 220, 220];
 function clean(str) {
   if (str === null || str === undefined) return str;
   return String(str)
-    .replace(/[\u2018\u2019\u02BC]/g, "'") // curly single quotes -> '
-    .replace(/[\u201C\u201D]/g, '"') // curly double quotes -> "
-    .replace(/\u2032/g, "'") // prime (feet) -> '
-    .replace(/\u2033/g, '"') // double prime (inches) -> "
-    .replace(/[\u2013\u2014]/g, "-") // en/em dash -> hyphen
-    .replace(/\u2026/g, "...") // ellipsis
-    .replace(/\u00A0/g, " "); // non-breaking space -> space
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2032/g, "'")
+    .replace(/\u2033/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ");
 }
 
 export function buildPdf(inv) {
@@ -28,14 +28,6 @@ export function buildPdf(inv) {
   const bottomMargin = 50;
   let y = 50;
 
-  // --- Page-break helper -----------------------------------------------
-  // Checks whether `neededHeight` more points can be drawn starting at
-  // `currentY` before hitting the bottom margin. If not, starts a new
-  // page and returns the new (reset) Y position. This is what was
-  // missing before: cursorY could grow past pageHeight with nothing
-  // ever calling doc.addPage(), so anything below the fold was silently
-  // clipped in the rendered/printed PDF (while the on-screen HTML
-  // preview just kept scrolling, hiding the problem).
   function ensureSpace(neededHeight, currentY) {
     if (currentY + neededHeight > pageHeight - bottomMargin) {
       doc.addPage();
@@ -46,9 +38,7 @@ export function buildPdf(inv) {
 
   try {
     doc.addImage(LOGO_DATA_URI, "PNG", marginX, y - 16, 40, 38);
-  } catch (e) {
-    /* logo is optional, ignore if it fails to embed */
-  }
+  } catch (e) {}
 
   doc.setFont("helvetica", "bold");
   doc.addImage;
@@ -79,7 +69,6 @@ export function buildPdf(inv) {
     by += 12;
   });
 
-  // INVOICE title + number, top right — solid navy bar, bold white text
   const invoiceLabel = "INVOICE: " + inv.number;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
@@ -112,9 +101,9 @@ export function buildPdf(inv) {
     "PREPARED BY",
   ];
   const metaValues = [
-    inv.invoiceDate || "-",
+    formatDateUS(inv.invoiceDate) || "-",
     clean(inv.terms) || "-",
-    inv.dueDate || "-",
+    formatDateUS(inv.dueDate) || "-",
     clean(inv.poNumber) || "-",
     clean(inv.business.repName) || "-",
   ];
@@ -170,11 +159,12 @@ export function buildPdf(inv) {
   ]
     .filter(Boolean)
     .map(clean);
-  const shipAddr =
+ const shipAddr =
     inv.shipToAddress && inv.shipToAddress.trim()
       ? inv.shipToAddress
       : inv.clientAddress;
-  const shipLines = [inv.clientName, ...shipAddr.split("\n")]
+  const shipLines = shipAddr
+    .split("\n")
     .filter(Boolean)
     .map(clean);
   const colWidth = halfW - 12;
@@ -411,7 +401,10 @@ export function buildPdf(inv) {
   if (inv.notes) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    const noteLines = doc.splitTextToSize(clean(inv.notes), pageWidth - marginX * 2);
+    const noteLines = doc.splitTextToSize(
+      clean(inv.notes),
+      pageWidth - marginX * 2,
+    );
     cursorY = ensureSpace(noteLines.length * 11 + 24, cursorY);
     doc.setTextColor(...SLATE);
     doc.text(noteLines, marginX, cursorY);
